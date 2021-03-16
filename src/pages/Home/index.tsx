@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MdAddShoppingCart } from 'react-icons/md';
 
 import { ProductList } from './styles';
@@ -32,41 +32,33 @@ const Home = (): JSX.Element => {
 
   useEffect(() => {
     async function loadProducts() {
-      const {data} = await api.get('/products')
-      // TODO
-      setProducts(data)
+      const { data } = await api.get<Product[]>('/products')
+      const formattedProducts = data.map(product => ({ ...product, priceFormatted: formatPrice(product.price) }))
+      setProducts(formattedProducts)
     }
-
     loadProducts();
   }, []);
 
-  function handleAddProduct(id: number) {
-    addProduct(id)
-    // TODO
-  }
-
   return (
     <ProductList>
-      {products.map(product =>(
-              <li key={product.id}>
-              <img src={product.image} alt={product.title} />
-              <strong>{product.title}</strong>
-              <span>{product.priceFormatted}</span>
-              <button
-                type="button"
-                data-testid="add-product-button"
-                onClick={() => handleAddProduct(product.id)}
-              >
-                <div data-testid="cart-product-quantity">
-                  <MdAddShoppingCart size={16} color="#FFF" />
-                  {/* {cartItemsAmount[product.id] || 0} */} 2
-                </div>
-      
-                <span>ADICIONAR AO CARRINHO</span>
-              </button>
-            </li>
+      {products.map(product => (
+        <li key={product.id}>
+          <img src={product.image} alt={product.title} />
+          <strong>{product.title}</strong>
+          <span>{product.priceFormatted}</span>
+          <button
+            type="button"
+            data-testid="add-product-button"
+            onClick={() => addProduct(product.id)}
+          >
+            <div data-testid="cart-product-quantity">
+              <MdAddShoppingCart size={16} color="#FFF" />
+              {/* {cartItemsAmount[product.id] || 0} */} 2
+            </div>
+            <span>ADICIONAR AO CARRINHO</span>
+          </button>
+        </li>
       ))}
-
     </ProductList>
   );
 };

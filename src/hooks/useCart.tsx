@@ -1,7 +1,8 @@
-import { createContext, ReactNode, useContext, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { api } from '../services/api';
 import { Product, Stock } from '../types';
+import { STORAGE_kEY } from '../util';
 
 interface CartProviderProps {
   children: ReactNode;
@@ -34,17 +35,34 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
 
   const addProduct = async (productId: number) => {
     try {
-    const {data} = await api.get<Product[]>('/products')
-    const product = data.filter(product => {
-      return product.id === productId 
+      const { data: stock } = await api.get<Stock>(`/stock/${productId}`)
 
-    })
-    console.log(product)
+      if (stock.amount <= 0) {
+        toast.error('Quantidade solicitada fora de estoque')
+        return
+      }
 
-    setCart(prev=> [...prev, ...product])
+      let product = cart.find(product => product.id === productId)
+
+      if (!product) {
+        const { data } = await api.get<Product>(`/products/${productId}`)
+
+        product = {
+          ...data,
+          amount: 1
+        }
+
+
+
+      }
       // TODO
+
+      setCart([...cart, product])
+
+
     } catch {
       // TODO
+      toast.error('Erro na adição do produto')
     }
   };
 
@@ -67,10 +85,14 @@ export function CartProvider({ children }: CartProviderProps): JSX.Element {
     }
   };
 
+  useEffect(() => {
+    localStorage.setItem(`${STORAGE_kEY}:cart`, JSON.stringify(cart))
+  }, [cart])
+
+  const providerValues = { cart, addProduct, removeProduct, updateProductAmount }
+
   return (
-    <CartContext.Provider
-      value={{ cart, addProduct, removeProduct, updateProductAmount }}
-    >
+    <CartContext.Provider value={providerValues} >
       {children}
     </CartContext.Provider>
   );
